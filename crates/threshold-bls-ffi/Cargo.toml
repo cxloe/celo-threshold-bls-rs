@@ -9,6 +9,7 @@ crate-type = ["lib", "cdylib", "staticlib"]
 name = "blind_threshold_bls"
 
 [dependencies]
+pyo3 = "0.16.5"
 threshold-bls = { path = "../threshold-bls", default-features = false }
 bls-crypto = { git = "https://github.com/celo-org/bls-crypto" }
 

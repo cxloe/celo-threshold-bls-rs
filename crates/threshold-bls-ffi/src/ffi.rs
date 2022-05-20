@@ -11,6 +11,8 @@ use threshold_bls::{
 };
 
 use bls_crypto::ffi::Buffer;
+use pyo3::prelude::*;
+
 
 use crate::*;
 
@@ -338,6 +340,7 @@ pub unsafe extern "C" fn partial_verify_blind_signature(
 ///
 /// Returns true if successful, otherwise false.
 #[no_mangle]
+#[pyfunction]
 pub unsafe extern "C" fn combine(
     threshold: usize,
     signatures: *const Buffer,
@@ -363,6 +366,12 @@ pub unsafe extern "C" fn combine(
     std::mem::forget(signature);
 
     true
+}
+
+#[pymodule]
+fn tip(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(combine, m)?)?;
+    Ok(())
 }
 
 ///////////////////////////////////////////////////////////////////////////
