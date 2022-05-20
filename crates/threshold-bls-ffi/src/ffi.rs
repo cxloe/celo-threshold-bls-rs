@@ -387,7 +387,7 @@ pub unsafe extern "C" fn combine(
 }
 
 #[pymodule]
-fn tip(_py: Python, m: &PyModule) -> PyResult<()> {
+fn blind_threshold_bls(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(combine, m)?)?;
     Ok(())
 }
