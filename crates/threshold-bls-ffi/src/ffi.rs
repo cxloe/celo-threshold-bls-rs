@@ -330,6 +330,24 @@ pub unsafe extern "C" fn partial_verify_blind_signature(
     SigScheme::verify_blind_partial(polynomial, blinded_message, signature).is_ok()
 }
 
+#[pyclass]
+#[repr(transparent)]
+#[derive(Clone)]
+pub struct PyBuffer(*const Buffer);
+#[pyclass]
+#[repr(transparent)]
+#[derive(Clone)]
+pub struct PyMutBuffer(*mut Buffer);
+
+// FIXME: this is bad and evil.
+// This should not be written, we will not writw this.meme
+// This is not a place of honor
+// Whats a little undefined behavior among friends?
+unsafe impl Sync for PyBuffer{}
+unsafe impl Send for PyBuffer{}
+unsafe impl Sync for PyMutBuffer{}
+unsafe impl Send for PyMutBuffer{}
+
 /// Combines a flattened vector of partial signatures to a single threshold signature
 ///
 /// # Safety
@@ -343,15 +361,15 @@ pub unsafe extern "C" fn partial_verify_blind_signature(
 #[pyfunction]
 pub unsafe extern "C" fn combine(
     threshold: usize,
-    signatures: *const Buffer,
-    asig: *mut Buffer,
+    signatures: PyBuffer,
+    asig: PyMutBuffer,
 ) -> bool {
-    if signatures.is_null() || asig.is_null() {
-        return false;
+    if signatures.0.is_null() || asig.0.is_null() {
+        return false; 
     }
 
     // split the flattened vector to a Vec<Vec<u8>> where each element is a serialized signature
-    let signatures = <&[u8]>::from(unsafe { &*signatures });
+    let signatures = <&[u8]>::from(unsafe { &*signatures.0 });
     let sigs = signatures
         .chunks(PARTIAL_SIG_LENGTH)
         .map(|chunk| chunk.to_vec())
@@ -362,7 +380,7 @@ pub unsafe extern "C" fn combine(
         Err(_) => return false,
     };
 
-    unsafe { *asig = Buffer::from(&signature[..]) };
+    unsafe { *asig.0 = Buffer::from(&signature[..]) };
     std::mem::forget(signature);
 
     true
@@ -812,7 +830,7 @@ mod tests {
 
         // 4. generate the threshold signature
         let mut asig = MaybeUninit::<Buffer>::uninit();
-        let ret = unsafe { combine(t, &concatenated, asig.as_mut_ptr()) };
+        let ret = unsafe { combine(t, PyBuffer(&concatenated), PyMutBuffer(asig.as_mut_ptr())) };
         assert!(ret);
         let asig = unsafe { asig.assume_init() };
 
